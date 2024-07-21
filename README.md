@@ -1,6 +1,6 @@
 # Ejemplos de NodeJS y Frameworks
 
-Este repositorio contiene ejemplos en **JavaScript** pertenecientes a la asignatura de **NodeJS y Frameworks**. Todo el material es original y ha sido creado por Pedro Malo.
+Este repositorio contiene ejemplos en **JavaScript** pertenecientes a la asignatura de **NodeJS y Frameworks** del módulo **Desarrollo backend**. Todo el material es original y ha sido creado por Pedro Malo.
 
 ## Contenido
 
