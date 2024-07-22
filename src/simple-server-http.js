@@ -94,6 +94,32 @@ async function requestListener(req, res) {
     return;
   }
 
+  if (resource === "mark-as-completed" && method === "PUT") {
+    if (!parameter) {
+      res.writeHead(400);
+      res.end("Please provide a valid id, e.g. /tasks/2");
+      return;
+    }
+
+    const index = tasks.findIndex((task) => task.id === parameter);
+    if (index === -1) {
+      res.writeHead(404);
+      res.end(`Task with id ${parameter} not found`);
+      return;
+    }
+
+    if (tasks[index].isCompleted) {
+      res.writeHead(400);
+      res.end(`Task with id ${parameter} is already completed`);
+      return;
+    }
+
+    tasks[index].isCompleted = true;
+    res.writeHead(202);
+    res.end(JSON.stringify(tasks[index]));
+    return;
+  }
+
   res.writeHead(404);
   res.end("Not found");
 }
