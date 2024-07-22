@@ -24,6 +24,15 @@ const tasks = [
   },
 ];
 
+function checkAuthorization(req, res, next) {
+  if (req.headers["authorization"] !== "123-asdf") {
+    res.writeHead(401);
+    res.end("Not authorized. Please provide a valid auth headers");
+    return;
+  }
+  next(req, res);
+}
+
 async function requestListener(req, res) {
   const url = req.url;
   const method = req.method;
@@ -124,7 +133,9 @@ async function requestListener(req, res) {
   res.end("Not found");
 }
 
-const server = http.createServer(requestListener);
+const server = http.createServer((req, res) => {
+  return checkAuthorization(req, res, requestListener);
+});
 server.listen(3000, () => {
   console.log("Server is running on http://localhost:3000");
 });
