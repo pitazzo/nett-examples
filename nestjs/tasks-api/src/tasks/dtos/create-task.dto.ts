@@ -1,13 +1,6 @@
-import {
-  IsBoolean,
-  IsIn,
-  IsNumber,
-  IsString,
-  Min,
-  MinLength,
-} from 'class-validator';
+import { IsIn, IsNumber, IsString, Min, MinLength } from 'class-validator';
 
-export class Task {
+export class CreateTaskDto {
   @IsNumber()
   @Min(0)
   id: number;
@@ -19,9 +12,6 @@ export class Task {
   @IsString()
   @IsIn(['compras', 'casa', 'trabajo', 'familia'])
   topic: 'compras' | 'casa' | 'trabajo' | 'familia';
-
-  @IsBoolean()
-  isCompleted: boolean;
 
   @IsString()
   @IsIn(['LOW', 'MEDIUM', 'HIGH'])

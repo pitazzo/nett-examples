@@ -7,8 +7,11 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { Task } from 'src/tasks/tasks.interface';
+import { Request } from 'express';
+import { CreateTaskDto } from 'src/tasks/dtos/create-task.dto';
 import { TasksService } from 'src/tasks/tasks.service';
 
 @Controller()
@@ -16,7 +19,11 @@ export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get('tasks')
-  getAllTasks() {
+  getAllTasks(@Req() req: Request) {
+    if (req.headers['authorization'] !== process.env.SUPER_SECRET_TOKEN) {
+      throw new UnauthorizedException();
+    }
+
     return this.tasksService.getAllTasks();
   }
 
@@ -32,11 +39,12 @@ export class TasksController {
   }
 
   @Post('tasks')
-  createNewTask(@Body() payload: Task) {
-    this.tasksService.addTask(payload);
-    return payload;
+  createNewTask(@Body() dto: CreateTaskDto) {
+    return this.tasksService.addTask(dto);
   }
 
   @Patch('tasks/mark-as-completed/:id')
-  markAsCompleted(@Param('id', ParseIntPipe) id: number) {}
+  markAsCompleted(@Param('id', ParseIntPipe) id: number) {
+    return this.tasksService.markAsCompleted(id);
+  }
 }
