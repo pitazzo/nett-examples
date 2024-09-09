@@ -28,8 +28,8 @@ export class TasksController {
   }
 
   @Get('task/:id')
-  getSingleTasks(@Param('id', ParseIntPipe) id: number) {
-    const task = this.tasksService.searchTask(id);
+  async getSingleTasks(@Param('id', ParseIntPipe) id: number) {
+    const task = await this.tasksService.searchTask(id);
 
     if (!task) {
       throw new NotFoundException(`Can not find task with id ${id}`);
