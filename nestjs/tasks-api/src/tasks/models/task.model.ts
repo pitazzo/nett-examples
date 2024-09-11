@@ -1,10 +1,13 @@
+export type Topic = 'compras' | 'casa' | 'trabajo' | 'familia';
+export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
+
 export class Task {
   id: number;
   name: string;
   summary: string;
-  topic: 'compras' | 'casa' | 'trabajo' | 'familia';
+  topic: Topic;
   isCompleted: boolean;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
-  createAt: Date;
-  updateAt: Date;
+  priority: Priority;
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -1,31 +1,113 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateTaskDto } from 'src/tasks/dtos/create-task.dto';
-import { Task } from 'src/tasks/models/task.model';
+import { Priority, Task, Topic } from 'src/tasks/models/task.model';
 import { SummaryService } from 'src/tasks/summary.service';
-import { promises as fs } from 'fs';
+import * as sqlite3 from 'sqlite3';
 
 @Injectable()
 export class TasksService {
-  constructor(private readonly summaryService: SummaryService) {}
+  private db: sqlite3.Database;
 
-  FILE_NAME = 'tasks.json';
-
-  private async retrieveTasks(): Promise<Task[]> {
-    try {
-      await fs.access(this.FILE_NAME);
-      const data = await fs.readFile(this.FILE_NAME, 'utf-8');
-      return JSON.parse(data);
-    } catch (error) {
-      return [];
-    }
+  constructor(private readonly summaryService: SummaryService) {
+    this.db = new sqlite3.Database('tasks.db', (error) => {
+      if (error) {
+        console.error('There was a problem while openning the DB');
+      }
+    });
   }
 
-  private async saveTasks(tasks: Task[]): Promise<void> {
-    await fs.writeFile(this.FILE_NAME, JSON.stringify(tasks), 'utf-8');
+  private async retrieveTasks(): Promise<Task[]> {
+    return new Promise<Task[]>((resolve, reject) => {
+      this.db.all('SELECT * FROM Tasks;', [], (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(result.map((row) => this.mapRowToTask(row)));
+        }
+      });
+    });
+  }
+
+  private async getTaskById(id: number): Promise<Task> {
+    return new Promise<Task>((resolve, reject) => {
+      this.db.get('SELECT * FROM Tasks WHERE id = ?', [id], (error, result) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(this.mapRowToTask(result));
+        }
+      });
+    });
+  }
+
+  private mapRowToTask(row: unknown): Task {
+    return {
+      id: row['id'],
+      name: row['name'],
+      summary: row['summary'],
+      topic: row['topic'],
+      isCompleted: row['isCompleted'] === 1,
+      priority: row['priority'],
+      createdAt: new Date(row['createdAt']),
+      updatedAt: new Date(row['updatedAt']),
+    };
+  }
+
+  private async insertNewTask(params: {
+    name: string;
+    priority: Priority;
+    topic: Topic;
+    summary: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Promise<Task> {
+    const newId = await new Promise<number>((resolve, reject) => {
+      this.db.run(
+        'INSERT INTO Tasks (name, topic, priority, summary, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)',
+        [
+          params.name,
+          params.topic,
+          params.priority,
+          params.summary,
+          params.createdAt.toISOString(),
+          params.updatedAt.toISOString(),
+        ],
+        function (error) {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(this.lastID);
+          }
+        },
+      );
+    });
+
+    return this.getTaskById(newId);
+  }
+
+  private async updateTask(task: Task): Promise<void> {
+    await new Promise<void>((resolve, reject) => {
+      this.db.run(
+        'UPDATE Tasks SET name = ?, topic = ?, priority = ?, summary = ?, createdAt = ?, updatedAt = ?, isCompleted = ? WHERE id = ?',
+        [
+          task.name,
+          task.topic,
+          task.priority,
+          task.summary,
+          task.createdAt.toISOString(),
+          task.updatedAt.toISOString(),
+          task.isCompleted,
+          task.id,
+        ],
+        (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve();
+          }
+        },
+      );
+    });
   }
 
   getAllTasks(): Promise<Task[]> {
@@ -39,44 +121,28 @@ export class TasksService {
   }
 
   async addTask(dto: CreateTaskDto): Promise<Task> {
-    const tasks = await this.retrieveTasks();
-
-    if (tasks.some((task) => task.id === dto.id)) {
-      throw new BadRequestException(`ID ${dto.id} does already exist`);
-    }
-
-    const task = {
+    return this.insertNewTask({
       ...dto,
-      isCompleted: false,
       summary: await this.summaryService.summarize(dto.name),
-      createAt: new Date(),
-      updateAt: new Date(),
-    };
-
-    tasks.push(task);
-
-    await this.saveTasks(tasks);
-
-    return task;
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   }
 
   async markAsCompleted(id: number): Promise<Task> {
-    const tasks = await this.retrieveTasks();
+    const task = await this.getTaskById(id);
 
-    const index = tasks.findIndex((task) => task.id === id);
-    if (index === -1) {
-      throw new NotFoundException(`Unable to find task with id ${id}`);
-    }
+    console.log(JSON.stringify(task, null, 2));
 
-    if (tasks[index].isCompleted) {
+    if (task.isCompleted) {
       throw new BadRequestException(`Task with id ${id} was already completed`);
     }
 
-    tasks[index].isCompleted = true;
-    tasks[index].updateAt = new Date();
+    task.isCompleted = true;
+    task.updatedAt = new Date();
 
-    await this.saveTasks(tasks);
+    await this.updateTask(task);
 
-    return tasks[index];
+    return task;
   }
 }
