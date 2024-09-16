@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateTaskDto } from 'src/tasks/dtos/create-task.dto';
 import { Priority, Task, Topic } from 'src/tasks/models/task.model';
-import { SummaryService } from 'src/tasks/summary.service';
+import { SummaryService } from 'src/tasks/services/summary.service';
 import { Repository } from 'typeorm';
 
 @Injectable()

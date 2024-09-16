@@ -8,7 +8,7 @@ export class Task {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({})
+  @Column()
   name: string;
 
   @Column()

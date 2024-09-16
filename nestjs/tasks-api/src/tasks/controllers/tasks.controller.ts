@@ -7,23 +7,16 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Req,
-  UnauthorizedException,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { CreateTaskDto } from 'src/tasks/dtos/create-task.dto';
-import { TasksService } from 'src/tasks/tasks.service';
+import { TasksService } from 'src/tasks/services/tasks.service';
 
 @Controller()
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
   @Get('tasks')
-  getAllTasks(@Req() req: Request) {
-    if (req.headers['authorization'] !== process.env.SUPER_SECRET_TOKEN) {
-      throw new UnauthorizedException();
-    }
-
+  getAllTasks() {
     return this.tasksService.getAllTasks();
   }
 
